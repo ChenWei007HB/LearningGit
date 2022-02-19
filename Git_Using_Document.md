@@ -76,3 +76,109 @@ git reflog # 查看你的git命令历史，可以查找回到未来版本的comm
 > `git reset HEAD <targetFile>`可以将**暂存区**中关于`targetFile`的**修改**撤销掉，重新放回**工作区**；
 >
 > `git rm <targetFile>`用于删除**版本库**中的`targetFile`，并使用`git commit -m "修改说明"`提交修改说明；
+
+#### 4、远程仓库
+
+> 由于远程仓库刚创建是空的，我们第一次推送`master`分支时，加上了`-u`参数，Git不但会把本地的`master`分支内容推送的远程新的`master`分支，还会把本地的`master`分支和远程的`master`分支关联起来，在以后的推送或者拉取时就可以简化命令；
+>
+> 后续只要本地修改做了提交，就可以采用`git push origin master`命令将 本地`master`分支的最新修改推送至GitHub ；
+
+```shell
+git remote add origin git@github.com:YOUR_GITHUB_USER_NAME/YOUR_REPOSITORY.git # 将本地的仓库与远程的仓库的origin进行关联，前提需要在GitHub上的账户需要添加本地仓库所在设备的SSH Keys
+git push -u origin master # git push命令将本地仓库的master分支推送到远程仓库，远程仓库默认名字是origin，第一次推送分支加上-u参数
+# 后续本地master分支所有新的修改就可以由以下命令提交至Github上了
+git push origin master # 将本地master分支的最新修改提交至GitHub上
+```
+
+
+
+> 如果添加的时候地址写错了，或者就是想删除远程库，可以用`git remote rm `命令。使用前，建议先用`git remote -v`查看远程库信息；
+>
+> 此处的**“删除”**其实是**解除了本地和远程的绑定关系**，并不是物理上删除了远程库。远程库本身并没有任何改动。要真正删除远程库，需要登录到GitHub，在后台页面找到删除按钮再删除。 
+
+```shell
+git remote -v # 查看远程库的信息
+git remote rm origin # 删除与远程的origin建立的绑定关系
+```
+
+
+
+> 克隆远程仓库至本地；
+
+```shell
+git clone https://github.com/YOUR_GITHUB_USER_NAME/LearningGit.git
+```
+
+#### 5、分支管理
+
+```shell
+# 创建分支develop并切换至该分支
+git checkout -b develop # checkout -b branchName相当于git branch develop+git checkout develop
+
+git branch # 查看分支
+git checkout branchName # 切换分支至branchName
+git merge branchName # 合并指定分支branchName到当前分支
+git branch -d branchName # 删除分支branchName
+```
+
+>  当合并分支遇到冲突时，比如同一个文件被两个分支都修改过，此时需要手动修改两个分支修改的差异，使得两个分支的修改一致，修改后需要提交，提交后才能进行合并；
+>
+>  `git`用`<<<<<<<`，`=======`，`>>>>>>>`标记出不同分支的内容 ；
+
+```shell
+git status # 可以查看有冲突的文件
+git log --graph # 可以查看分支的合并图
+```
+
+
+
+>  `stash`，可以把未完成的当前工作现场“储藏”起来，等以后恢复现场后继续工作；
+>
+>  在master分支上修复的bug，想要合并到当前dev分支，可以用`git cherry-pick <commit_id> `命令，把bug提交的修改“复制”到当前分支，避免重复劳动；
+
+```shell
+git stash # 存储当前工作现场，等其他任务完成后恢复现场继续工作
+git stash list # 查看保存的工作现场列表
+# 恢复工作现场方法一
+git stash apply stashName # 恢复工作现场
+git stash drop stashName # 删除stash内容
+# 恢复工作现场方法二
+git stash pop # 恢复现场的同时把stash内容也删除了
+```
+
+
+
+> **`feature`分支**：添加一个新功能时，你肯定不希望因为一些实验性质的代码，把主分支搞乱了，所以，每添加一个新功能，最好新建一个feature分支，在上面开发，完成后，合并，最后，删除该feature分支。 
+
+```shell
+git branch -D <branchName> # 强行删除一个没有被合并过的分支
+```
+
+
+
+> **本地分支与远程相对应的分支常用的管理规则：**
+>
+> - `master`分支是主分支，因此要时刻与远程同步；
+> - `dev`分支是开发分支，团队所有成员都需要在上面工作，所以也需要与远程同步；
+> - bug分支只用于在本地修复bug，就没必要推到远程了，除非老板要看看你每周到底修复了几个bug；
+> - feature分支是否推到远程，取决于你是否和你的小伙伴合作在上面开发。
+>
+> 
+>
+> 本地的dev分支推送至远程失败，因为你的小伙伴的最新提交和你试图推送的提交有冲突，解决办法也很简单，Git已经提示我们，先用`git pull`把最新的提交从`origin/dev`抓下来，然后在本地合并，解决冲突，再推送；
+>
+>  **多人协作的工作模式通常是这样：** 
+>
+> 1. 首先，可以试图用`git push origin <branchName> `推送自己的修改；
+> 2. 如果推送失败，则因为远程分支比你的本地更新，需要先用`git pull`试图合并；
+> 3. 如果合并有冲突，则解决冲突，并在本地提交；
+> 4. 没有冲突或者解决掉冲突后，再用`git push origin <barnchName> `推送就能成功！
+
+```shell
+git clone https://github.com/YOUR_GITHUB_USER_NAME/LearningGit.git # 拉取远程仓库时有默认分支，此处假设是master分支
+# 假设你需要在dev分支上开发，需要拉取远程的dev分支到本地
+git checkout -b dev origin/dev # 在本地创建和远程分支对应的分支
+git pull # 拉取最新提交的origin/dev分支，然后在本地合并，解决冲突，再推送至远程分支
+git branch --set-upstream-to=origin/<branchName> <branchName> # 指定本地branchName与远程origin/branchName分支的链接
+```
+
